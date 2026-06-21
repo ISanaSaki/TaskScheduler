@@ -12,6 +12,9 @@ class TaskStatus(str, Enum):
 
 class Task(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(
+        sa_column=Column(Integer, ForeignKey("user.id", ondelete="CASCADE"))
+    )
     name: str
     cron_expression: Optional[str] = None
     is_recurring: bool = False
