@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>Task Status</h2>
+    <input type="number" id="taskId" placeholder="Task ID" />
+    <button onclick="connect()">Connect</button>
+    <div id="output"></div>
+
+    <script>
+        let ws;
+
+        function connect() {
+            const taskId = document.getElementById("taskId").value;
+            ws = new WebSocket(`ws://127.0.0.1:8000/ws/tasks/${taskId}`);
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                document.getElementById("output").innerHTML =
+                    `Status: ${data.status} <br> Result: ${data.result}`;
+            };
+        }
+    </script>
+</body>
+</html>

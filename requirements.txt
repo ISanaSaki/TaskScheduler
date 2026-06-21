@@ -1,0 +1,13 @@
+fastapi==0.136.3
+uvicorn[standard]==0.49.0
+sqlmodel==0.0.38
+alembic==1.18.4
+asyncpg==0.31.0
+psycopg2-binary==2.9.12
+celery[redis]==5.6.3
+redis==6.4.0
+apscheduler==1.2.2
+python-dotenv==1.7.4
+passlib[argon2]==2.14.1
+pydantic-settings==3.5.0
+python-jose[cryptography]==3.5.0
