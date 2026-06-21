@@ -4,8 +4,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
-    SECRET_KEY:str
-    ALGORITM:str
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
 
     class Config:
         env_file = ".env"
