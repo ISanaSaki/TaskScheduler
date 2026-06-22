@@ -6,7 +6,7 @@ asyncpg==0.31.0
 psycopg2-binary==2.9.12
 celery[redis]==5.6.3
 redis==6.4.0
-apscheduler==1.2.2
+apscheduler==3.10.4
 python-dotenv==1.7.4
 passlib[argon2]==2.14.1
 pydantic-settings==3.5.0
