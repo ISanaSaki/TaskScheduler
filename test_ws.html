@@ -3,6 +3,7 @@
 <body>
     <h2>Task Status</h2>
     <input type="number" id="taskId" placeholder="Task ID" />
+    <input type="text" id="token" placeholder="JWT access token" style="width:300px" />
     <button onclick="connect()">Connect</button>
     <div id="output"></div>
 
@@ -11,12 +12,21 @@
 
         function connect() {
             const taskId = document.getElementById("taskId").value;
-            ws = new WebSocket(`ws://127.0.0.1:8000/ws/tasks/${taskId}`);
+            const token = document.getElementById("token").value;
+            ws = new WebSocket(`ws://127.0.0.1:8000/ws/tasks/${taskId}?token=${encodeURIComponent(token)}`);
+
+            ws.onopen = () => {
+                document.getElementById("output").innerHTML = "Connected...";
+            };
 
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 document.getElementById("output").innerHTML =
                     `Status: ${data.status} <br> Result: ${data.result}`;
+            };
+
+            ws.onerror = () => {
+                document.getElementById("output").innerHTML = "Connection error (check token/task ID)";
             };
         }
     </script>
