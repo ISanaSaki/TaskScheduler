@@ -16,13 +16,22 @@ async def load_recurring_tasks():
 
     for task in tasks:
         if task.cron_expression:
-            scheduler.add_job(
-                run_task.delay,
-                CronTrigger.from_crontab(task.cron_expression),
-                args=[task.id],
-                id=f"task_{task.id}",
-                replace_existing=True,
-            )
+            add_recurring_task(task.id, task.cron_expression)
+
+def add_recurring_task(task_id: int, cron_expression: str):
+    job_id = f"task_{task_id}"
+    scheduler.add_job(
+        run_task.delay,
+        CronTrigger.from_crontab(cron_expression),
+        args=[task_id],
+        id=job_id,
+        replace_existing=True,
+    )
+
+def remove_recurring_task(task_id: int):
+    job_id = f"task_{task_id}"
+    if scheduler.get_job(job_id):
+        scheduler.remove_job(job_id)
 
 def start_scheduler():
     scheduler.start()
