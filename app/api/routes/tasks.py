@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from app.core.database import get_session
 from app.core.security import get_current_user
+from app.core.scheduler import scheduler, add_recurring_task, remove_recurring_task
 from app.models.task import Task, TaskRun, TaskStatus
 from app.models.user import User
 from app.schemas.task import TaskCreate, TaskResponse, TaskRunResponse
@@ -20,7 +21,12 @@ async def create_task(
     session.add(task)
     await session.commit()
     await session.refresh(task)
-    run_task.delay(task.id)
+
+    if task.is_recurring and task.cron_expression:
+        add_recurring_task(task.id, task.cron_expression)
+    else:
+        run_task.delay(task.id)
+
     return task
 
 @router.get("/", response_model=list[TaskResponse])
@@ -46,7 +52,7 @@ async def get_task_runs(
         raise HTTPException(status_code=403, detail="Access denied")
 
     result = await session.execute(
-        select(TaskRun).where(TaskRun.task_id == task_id)
+        select(TaskRun).where(TaskRun.task_id == task_id).order_by(TaskRun.id.desc())
     )
     return result.scalars().all()
 
@@ -61,6 +67,9 @@ async def delete_task(
         raise HTTPException(status_code=404, detail="Task not found")
     if task.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
+
+    if task.is_recurring:
+        remove_recurring_task(task.id)
 
     await session.delete(task)
     await session.commit()
