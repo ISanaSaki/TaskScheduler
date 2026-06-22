@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from app.core.config import settings
 from app.models.task import Task, TaskRun
+from app.models.user import User
 from sqlmodel import SQLModel
 import os
 from dotenv import load_dotenv
