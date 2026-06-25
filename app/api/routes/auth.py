@@ -9,6 +9,9 @@ from app.core.security import (
 )
 from app.models.user import User
 from app.schemas.auth import RegisterRequest, TokenResponse, RefreshRequest
+from app.core.logger import get_logger
+
+logger = get_logger("auth")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -16,10 +19,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def register(data: RegisterRequest, session: AsyncSession = Depends(get_session)):
     result = await session.execute(select(User).where(User.username == data.username))
     if result.scalars().first():
+        logger.warning(f"Register failed - username '{data.username}' already exists")
         raise HTTPException(status_code=400, detail="Username already exists")
 
     result = await session.execute(select(User).where(User.email == data.email))
     if result.scalars().first():
+        logger.warning(f"Register failed - email '{data.email}' already exists")
         raise HTTPException(status_code=400, detail="Email already exists")
 
     user = User(
@@ -30,6 +35,8 @@ async def register(data: RegisterRequest, session: AsyncSession = Depends(get_se
     session.add(user)
     await session.commit()
     await session.refresh(user)
+
+    logger.info(f"New user registered: '{data.username}'")
 
     access_token = create_access_token({"sub": user.username})
     refresh_token = create_refresh_token({"sub": user.username})
@@ -44,7 +51,10 @@ async def login(
     user = result.scalars().first()
 
     if not user or not verify_password(form_data.password, user.hashed_password):
+        logger.warning(f"Login failed for username: '{form_data.username}'")
         raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    logger.info(f"User '{form_data.username}' logged in successfully")
 
     access_token = create_access_token({"sub": user.username})
     refresh_token = create_refresh_token({"sub": user.username})
@@ -57,7 +67,10 @@ async def refresh(data: RefreshRequest, session: AsyncSession = Depends(get_sess
     result = await session.execute(select(User).where(User.username == username))
     user = result.scalars().first()
     if not user:
+        logger.warning(f"Refresh failed - user not found: '{username}'")
         raise HTTPException(status_code=401, detail="User not found")
+
+    logger.info(f"Token refreshed for user: '{username}'")
 
     access_token = create_access_token({"sub": user.username})
     refresh_token = create_refresh_token({"sub": user.username})

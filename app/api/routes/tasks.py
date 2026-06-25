@@ -8,6 +8,9 @@ from app.models.task import Task, TaskRun, TaskStatus
 from app.models.user import User
 from app.schemas.task import TaskCreate, TaskResponse, TaskRunResponse
 from app.worker.tasks import run_task
+from app.core.logger import get_logger
+
+logger = get_logger("tasks")
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -24,8 +27,10 @@ async def create_task(
 
     if task.is_recurring and task.cron_expression:
         add_recurring_task(task.id, task.cron_expression)
+        logger.info(f"Recurring task {task.id} scheduled - cron: '{task.cron_expression}' - user: '{current_user.username}'")
     else:
         run_task.delay(task.id)
+        logger.info(f"Task {task.id} created and dispatched to Celery - user: '{current_user.username}'")
 
     return task
 
@@ -49,6 +54,7 @@ async def get_task_runs(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     if task.user_id != current_user.id:
+        logger.warning(f"Access denied - user '{current_user.username}' tried to access task {task_id}")
         raise HTTPException(status_code=403, detail="Access denied")
 
     result = await session.execute(
@@ -66,6 +72,7 @@ async def delete_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     if task.user_id != current_user.id:
+        logger.warning(f"Access denied - user '{current_user.username}' tried to delete task {task_id}")
         raise HTTPException(status_code=403, detail="Access denied")
 
     if task.is_recurring:
@@ -73,4 +80,5 @@ async def delete_task(
 
     await session.delete(task)
     await session.commit()
+    logger.info(f"Task {task_id} deleted by user '{current_user.username}'")
     return {"detail": "deleted"}

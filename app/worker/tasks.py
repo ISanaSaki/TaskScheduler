@@ -1,5 +1,8 @@
 from datetime import datetime
 from app.worker.celery_app import celery_app
+from app.core.logger import get_logger
+
+logger = get_logger("worker")
 
 @celery_app.task(bind=True)
 def run_task(self, task_id: int):
@@ -12,7 +15,6 @@ def run_task(self, task_id: int):
     from app.core.email import send_email
 
     async def _run():
-        # هر بار یه engine جدید میسازه تا مشکل Windows نداشته باشه
         engine = create_async_engine(settings.DATABASE_URL)
         session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -22,12 +24,15 @@ def run_task(self, task_id: int):
 
             task = await session.get(Task, task_id)
             if not task:
+                logger.error(f"Task {task_id} not found in database")
                 await engine.dispose()
                 return
 
             task.status = TaskStatus.running
             await session.commit()
             await session.refresh(task_run)
+
+            logger.info(f"Task {task_id} started - sending email to '{task.email_to}'")
 
             try:
                 await send_email(
@@ -36,16 +41,21 @@ def run_task(self, task_id: int):
                     body=task.email_body,
                 )
                 result = f"Email sent to {task.email_to}"
+
                 task_run.status = TaskStatus.done
                 task_run.result = result
                 task_run.finished_at = datetime.utcnow()
                 task.status = TaskStatus.done
+
+                logger.info(f"Task {task_id} completed - {result}")
 
             except Exception as e:
                 task_run.status = TaskStatus.failed
                 task_run.result = str(e)
                 task_run.finished_at = datetime.utcnow()
                 task.status = TaskStatus.failed
+
+                logger.error(f"Task {task_id} failed - {str(e)}")
 
             finally:
                 await session.commit()
