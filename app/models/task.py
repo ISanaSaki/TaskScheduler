@@ -20,6 +20,9 @@ class Task(SQLModel, table=True):
     is_recurring: bool = False
     status: TaskStatus = TaskStatus.pending
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    email_to: Optional[str] = None
+    email_subject: Optional[str] = None
+    email_body: Optional[str] = None
 
 class TaskRun(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
