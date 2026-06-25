@@ -7,6 +7,9 @@ class TaskCreate(BaseModel):
     name: str
     cron_expression: Optional[str] = None
     is_recurring: bool = False
+    email_to: Optional[str] = None
+    email_subject: Optional[str] = None
+    email_body: Optional[str] = None
 
 class TaskResponse(BaseModel):
     id: int
