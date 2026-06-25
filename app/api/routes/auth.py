@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -10,13 +10,15 @@ from app.core.security import (
 from app.models.user import User
 from app.schemas.auth import RegisterRequest, TokenResponse, RefreshRequest
 from app.core.logger import get_logger
+from app.core.limiter import limiter
 
 logger = get_logger("auth")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(data: RegisterRequest, session: AsyncSession = Depends(get_session)):
+@limiter.limit("5/minute")
+async def register(request: Request, data: RegisterRequest, session: AsyncSession = Depends(get_session)):
     result = await session.execute(select(User).where(User.username == data.username))
     if result.scalars().first():
         logger.warning(f"Register failed - username '{data.username}' already exists")
@@ -43,7 +45,9 @@ async def register(data: RegisterRequest, session: AsyncSession = Depends(get_se
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("10/minute")
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_session)
 ):
@@ -61,7 +65,8 @@ async def login(
     return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh(data: RefreshRequest, session: AsyncSession = Depends(get_session)):
+@limiter.limit("20/minute")
+async def refresh(request: Request, data: RefreshRequest, session: AsyncSession = Depends(get_session)):
     username = decode_refresh_token(data.refresh_token)
 
     result = await session.execute(select(User).where(User.username == username))
