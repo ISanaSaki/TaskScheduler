@@ -57,7 +57,6 @@ async def task_status(
                     "status": run.status.value,
                     "result": run.result,
                 })
-
                 if run.status in (TaskStatus.done, TaskStatus.failed):
                     break
             else:
@@ -68,9 +67,8 @@ async def task_status(
                 })
 
             await asyncio.sleep(1)
+
     except WebSocketDisconnect:
         pass
     except Exception:
         pass
-    finally:
-        await websocket.close()
