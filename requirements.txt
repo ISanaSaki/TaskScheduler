@@ -13,4 +13,8 @@ pydantic-settings==3.5.0
 python-jose[cryptography]==3.5.0
 email-validator==2.2.0
 aiosmtplib==3.0.1
-slowapi==0.1.9
+slowapi==0.1.
+pytest==8.3.5
+pytest-asyncio==0.24.0
+httpx==0.28.1
+aiosqlite==0.20.0

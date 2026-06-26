@@ -16,6 +16,7 @@ __pycache__/
 
 # Docker
 *.log
+logs/
 
 # IDE
 .vscode/
