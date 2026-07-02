@@ -94,41 +94,23 @@ cd TaskScheduler
 cp .env.example .env
 # Edit .env with your values
 ```
-
-### 2. Start PostgreSQL & Redis
-
-```bash
-docker compose up -d
-```
-
-### 3. Install dependencies
+### 2. Start all services
 
 ```bash
-python -m venv .venv
-.venv\Scripts\activate      # Windows
-source .venv/bin/activate   # Linux/Mac
-pip install -r requirements.txt
+docker compose up -d --build
 ```
 
-### 4. Apply migrations
+This starts all four services: PostgreSQL, Redis, API, and Celery worker.
+
+### 3. Apply migrations
 
 ```bash
-alembic upgrade head
+docker compose exec api alembic upgrade head
 ```
 
-### 5. Start Celery worker
+### 4. Access the API
 
-```bash
-celery -A app.worker.celery_app.celery_app worker --loglevel=info --pool=solo
-```
-
-### 6. Start API server
-
-```bash
-uvicorn app.main:app --reload
-```
-
-Visit **http://localhost:8000/docs** for the interactive API documentation.
+Visit **http://localhost:8000/docs**
 
 ---
 
